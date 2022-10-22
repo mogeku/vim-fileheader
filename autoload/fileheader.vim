@@ -1,7 +1,7 @@
 " @Author: ahonn
 " @Date: 2018-10-03 23:38:15
 " @Last Modified by: ahonn
-" @Last Modified time: 2021-01-26 23:34:41
+" @Last Modified time: 2022-10-22 20:47:34
 
 let s:vim_style = { 'begin': '', 'char': '" ', 'end': '' }
 let s:c_style = { 'begin': '/*', 'char': ' * ', 'end': ' */' }
@@ -28,6 +28,7 @@ let s:delimiter_map = {
   \ 'sass': s:sass_style,
   \ 'scss': s:sass_style,
   \ 'shell': s:shell_style,
+  \ 'sh': s:shell_style,
   \ 'python': s:shell_style,
   \ 'ruby': s:shell_style,
   \ 'yaml': s:shell_style,
@@ -69,12 +70,10 @@ endfunction
 function! fileheader#load_git_config()
   let s:job_ids = []
   if has('nvim')
-    function! s:set_author_handler(id, data, event)
-      let msg = join(a:data, '')
-      if msg != ''
-        let g:fileheader_author = msg
-      endif
-    endfunction
+    let git_user_email = systemlist(['git', 'config', '--get', 'user.name'])[0]
+    if git_user_email != ''
+        let g:fileheader_author = git_user_email
+    endif
   else
     function! s:set_author_handler(channel)
       while ch_status(a:channel, {'part': 'out'}) == 'buffered'
@@ -84,17 +83,15 @@ function! fileheader#load_git_config()
         endif
       endwhile
     endfunction
+    call fileheader#run_command_async(['git', 'config', '--get', 'user.name'], function('s:set_author_handler'))
   endif
-  call fileheader#run_command_async(['git', 'config', '--get', 'user.name'], function('s:set_author_handler'))
 
   if g:fileheader_show_email
     if has('nvim')
-      function! s:set_email_handler(id, data, event)
-        let msg = join(a:data, '')
-        if msg != ''
-          let g:fileheader_email = msg
-        endif
-      endfunction
+      let git_user_email = systemlist(['git', 'config', '--get', 'user.email'])[0]
+      if git_user_email != ''
+          let g:fileheader_email = git_user_email
+      endif
     else
       function! s:set_email_handler(channel)
         while ch_status(a:channel, {'part': 'out'}) == 'buffered'
@@ -104,8 +101,8 @@ function! fileheader#load_git_config()
           endif
         endwhile
       endfunction
+      call fileheader#run_command_async(['git', 'config', '--get', 'user.email'], function('s:set_email_handler'))
     endif
-    call fileheader#run_command_async(['git', 'config', '--get', 'user.email'], function('s:set_email_handler'))
   endif
 endfunction
 
